@@ -1,34 +1,58 @@
-project('yui', 'objcpp', 'cpp', default_options: ['cpp_std=c++11'])
+project('yui', 'cpp', default_options: ['cpp_std=c++11'])
 
 imgui_dir = join_paths('..', 'imgui')
 
 inc_dir = include_directories(join_paths(imgui_dir, 'backends'), imgui_dir)
 
 src = [
+    'src/main.cpp',
     join_paths(imgui_dir, 'imgui.cpp'),
     join_paths(imgui_dir, 'imgui_draw.cpp'),
     join_paths(imgui_dir, 'imgui_tables.cpp'),
     join_paths(imgui_dir, 'imgui_demo.cpp'),
     join_paths(imgui_dir, 'imgui_widgets.cpp'),
     join_paths(imgui_dir, 'backends', 'imgui_impl_glfw.cpp'), 
-    join_paths(imgui_dir, 'backends', 'imgui_impl_metal.mm'), 
-    'src/main.mm',
+    join_paths(imgui_dir, 'backends', 'imgui_impl_opengl3.cpp') 
 ]
 
-deps = []
-modules = ['Metal', 'MetalKit', 'Cocoa', 'IOKit', 'CoreVideo', 'QuartzCore']
-foreach module_name : modules 
-    deps += dependency('appleframeworks', modules : module_name)
-endforeach
+cpp_args = ['-std=c++11', '-I'+imgui_dir, '-I'+join_paths(imgui_dir, 'backends')]
+cpp_args += ['-g', '-Wall', '-Wformat']
+libs = []
+linux_gl_libs = '-lGL'
 
-cpp = meson.get_compiler('cpp')
-glfw = cpp.find_library('glfw', dirs: '/opt/homebrew/lib', required: true)
-deps += glfw
+os = host_machine.system()
+if os == 'darwin' 
+  message('macOS')
 
-cpp_args = ['-std=c++11', '-I/usr/local/include', '-I/opt/homebrew/include']
-cpp_args += ['-Wall', '-Wformat']
-c_args = cpp_args
-objcpp_args = cpp_args
-objcpp_args += ['-fobjc-weak', '-fobjc-arc']
+  modules = ['OpenGL', 'Cocoa', 'IOKit', 'CoreVideo']
+  foreach module_name : modules 
+      libs += dependency('appleframeworks', modules : module_name)
+  endforeach
 
-executable('yui', src, cpp_args: cpp_args, c_args: c_args, objcpp_args: objcpp_args, include_directories : inc_dir, dependencies: deps)
+  cpp = meson.get_compiler('cpp')
+  glfw = cpp.find_library('glfw', dirs: '/opt/homebrew/lib', required: true)
+  libs += glfw
+
+  cpp_args += ['-I/usr/local/inclue', '-I/opt/local/include', '-I/opt/homebrew/include']
+  c_args = cpp_args
+endif
+
+if os == 'linux' 
+  message('Linux')
+
+  # Need to add glfw3 lib for linux
+
+  cpp_args += ['pkg-config', '--cflags', 'glfw3']
+  c_args = cpp_args
+endif
+
+if os == 'windows' 
+  message('Windows')
+
+  # Need to add glfw3 lib for windows
+
+  cpp_args += ['pkg-config', '--cflags', 'glfw3']
+  c_args = cpp_args
+endif
+
+executable('yui', src, cpp_args: cpp_args, c_args: c_args, include_directories : inc_dir, dependencies: libs)
