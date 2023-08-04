@@ -9,6 +9,9 @@
 #endif
 #include <GLFW/glfw3.h>
 
+#include "implot.h"
+#include "scraper.h"
+
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
 #pragma comment(lib, "legacy_stdio_definitions")
@@ -50,8 +53,7 @@ int main(int, char**) {
 #endif
 
   // Create window with graphics context
-  GLFWwindow* window = glfwCreateWindow(
-      1280, 720, "Dear ImGui GLFW+OpenGL3 example", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(1280, 720, "Yui", nullptr, nullptr);
   if (window == nullptr) return 1;
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);  // Enable vsync
@@ -68,14 +70,13 @@ int main(int, char**) {
 
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
-  // ImGui::StyleColorsLight();
+  //   ImGui::StyleColorsLight();
 
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
   // Global state
-  bool show_demo_window = true;
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
   // Main loop
@@ -97,7 +98,7 @@ int main(int, char**) {
     ImGui::NewFrame();
 
     // ImGui demo window
-    if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
+    // ImGui::ShowDemoWindow(&show_demo_window);
 
     // Yui window
     {
@@ -111,6 +112,10 @@ int main(int, char**) {
       //     return 1;
       // }
 
+      int bar_data[11] = {1, 4, 3, 6, 7, 3, 4, 5, 6, 7, 8};
+      float x_data[1000] = {10.0f};
+      float y_data[1000] = {100.0f};
+
       ImGui::InputText("Starting Data", starting_date, 64);
       ImGui::Separator();
       ImGui::InputText("Ending Data", ending_date, 64);
@@ -121,6 +126,16 @@ int main(int, char**) {
       if (ImGui::Button("Update")) {
         // Update data here
       }
+
+      // Fetch_data();
+
+      ImPlot::CreateContext();
+      if (ImPlot::BeginPlot("My Plot")) {
+        ImPlot::PlotBars("My Bar Plot", bar_data, 11);
+        ImPlot::PlotLine("My Line Plot", x_data, y_data, 1000);
+        ImPlot::EndPlot();
+      }
+      ImPlot::DestroyContext();
 
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                   1000.0f / io.Framerate, io.Framerate);

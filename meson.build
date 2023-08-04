@@ -6,6 +6,9 @@ inc_dir = include_directories(join_paths(imgui_dir, 'backends'), imgui_dir)
 
 src = [
     'src/main.cpp',
+    'src/implot.cpp',
+    'src/implot_items.cpp',
+    'src/scraper.cpp',
     join_paths(imgui_dir, 'imgui.cpp'),
     join_paths(imgui_dir, 'imgui_draw.cpp'),
     join_paths(imgui_dir, 'imgui_tables.cpp'),
@@ -31,7 +34,9 @@ if os == 'darwin'
 
   cpp = meson.get_compiler('cpp')
   glfw = cpp.find_library('glfw', dirs: '/opt/homebrew/lib', required: true)
+  curl = cpp.find_library('curl', dirs: '/opt/homebrew/opt/curl/lib', required: true)
   libs += glfw
+  libs += curl
 
   cpp_args += ['-I/usr/local/inclue', '-I/opt/local/include', '-I/opt/homebrew/include']
   c_args = cpp_args
@@ -40,7 +45,7 @@ endif
 if os == 'linux' 
   message('Linux')
 
-  # Need to add glfw3 lib for linux
+  # Need to add glfw3+curl libs for linux
 
   cpp_args += ['pkg-config', '--cflags', 'glfw3']
   c_args = cpp_args
@@ -49,7 +54,7 @@ endif
 if os == 'windows' 
   message('Windows')
 
-  # Need to add glfw3 lib for windows
+  # Need to add glfw3+curl libs for windows
 
   cpp_args += ['pkg-config', '--cflags', 'glfw3']
   c_args = cpp_args
