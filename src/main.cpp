@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 
 #include "implot.h"
+#include "plot_data.h"
 #include "scraper.h"
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && \
@@ -160,6 +161,9 @@ int main(int, char**) {
 
   // Global state
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+  std::string csv;
+  std::map<std::chrono::system_clock::time_point, TradingData> plot_data;
+  CURL* curl = InitCurl(csv);
 
   // Main loop
 #ifdef __EMSCRIPTEN__
@@ -178,9 +182,6 @@ int main(int, char**) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-
-    // ImGui demo window
-    // ImGui::ShowDemoWindow(&show_demo_window);
 
     // Yui window
     {
@@ -209,10 +210,16 @@ int main(int, char**) {
       ImGui::Separator();
 
       if (ImGui::Button("Update")) {
-        // Update data here
-      }
+        std::string url =
+            GenerateURL("^GSPC", date::sys_days{date::January / 1 / 2023},
+                        date::sys_days{date::April / 1 / 2023}, "1d");
+        std::cout << "url: " << url << std::endl;
+        CURLcode code = DownloadCSV(curl, url);
+        std::cout << "code: " << code << std::endl;
+        std::cout << "csv: " << csv << std::endl;
 
-      // Fetch_data();
+        ParseTradingData(csv, plot_data);
+      }
 
       ImPlot::CreateContext();
       if (ImPlot::BeginPlot("My Plot")) {
@@ -242,6 +249,8 @@ int main(int, char**) {
 #ifdef __EMSCRIPTEN__
   EMSCRIPTEN_MAINLOOP_END;
 #endif
+
+  curl_easy_cleanup(curl);
 
   // Cleanup
   ImGui_ImplOpenGL3_Shutdown();
