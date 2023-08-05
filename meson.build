@@ -1,4 +1,4 @@
-project('yui', 'cpp', default_options: ['cpp_std=c++11', 'buildtype=release', 'debug=false', 'optimization=3'])
+project('yui', 'cpp', default_options: ['buildtype=release', 'debug=false', 'optimization=3'])
 
 imgui_dir = join_paths('..', 'imgui')
 
@@ -9,6 +9,7 @@ src = [
     'src/implot.cpp',
     'src/implot_items.cpp',
     'src/scraper.cpp',
+    'src/plot_data.cpp',
     join_paths(imgui_dir, 'imgui.cpp'),
     join_paths(imgui_dir, 'imgui_draw.cpp'),
     join_paths(imgui_dir, 'imgui_tables.cpp'),
