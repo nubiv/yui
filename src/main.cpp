@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 
 #include "implot.h"
+#include "implot_internal.h"
 #include "plot_data.h"
 #include "scraper.h"
 
@@ -78,7 +79,7 @@ int main(int, char**) {
   colors[ImGuiCol_Text] =
       ImVec4(252.f / 255.f, 224.f / 255.f, 176.f / 255.f, 1.f);
   colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-  colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
+  colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
   colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
   colors[ImGuiCol_PopupBg] = ImVec4(0.19f, 0.19f, 0.19f, 0.92f);
   colors[ImGuiCol_Border] = ImVec4(0.19f, 0.19f, 0.19f, 0.29f);
@@ -165,6 +166,21 @@ int main(int, char**) {
   std::map<std::chrono::system_clock::time_point, TradingData> plot_data;
   CURL* curl = InitCurl(csv);
 
+  char starting_date[64] = "2023-06-01";
+  char ending_date[64] = "2023-07-01";
+  char symbol[64] = "TSLA";
+
+  std::string init_url =
+      GenerateURL("^GSPC", date::sys_days{date::January / 1 / 2023},
+                  date::sys_days{date::July / 1 / 2023}, "1d");
+  DownloadCSV(curl, init_url);
+  ParseTradingData(csv, plot_data);
+
+  // for (const auto& p : plot_data) {
+  //   std::cout << "Time: " << date::format("%Y-%m-%d", p.first)
+  //             << " High: " << p.second.high << std::endl;
+  // }
+
   // Main loop
 #ifdef __EMSCRIPTEN__
   // For an Emscripten build we are disabling file-system access, so let's not
@@ -187,20 +203,83 @@ int main(int, char**) {
     {
       if (!ImGui::Begin(
               "Yui!", nullptr,
-              ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize)) {
+              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize)) {
         ImGui::End();
         return 1;
       }
       ImGui::SetWindowSize(ImVec2(io.DisplaySize));
       ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
 
-      static char starting_date[64] = "2023-07-01";
-      static char ending_date[64] = "2023-08-01";
-      static char symbol[64] = "XXX";
+      ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate,
+                  io.Framerate);
 
-      int bar_data[11] = {1, 4, 3, 6, 7, 3, 4, 5, 6, 7, 8};
-      float x_data[1000] = {10.0f};
-      float y_data[1000] = {100.0f};
+      // start plotting
+      ImPlot::CreateContext();
+      if (ImPlot::BeginPlot("StockPlot", ImVec2(-1, io.DisplaySize.y - 200),
+                            ImPlotFlags_NoLegend)) {
+        ImVec4 bear_col = ImVec4(0.000f, 1.000f, 0.441f, 1.000f);
+        ImVec4 bull_col = ImVec4(0.853f, 0.050f, 0.310f, 1.000f);
+        double width_percent = 0.25;
+
+        ImPlot::SetupAxis(ImAxis_X1, "Date",
+                          ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
+        ImPlot::SetupAxis(ImAxis_Y1, "Price",
+                          ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
+        ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+        ImPlot::SetupAxisFormat(ImAxis_Y1, "$%.0f");
+
+        int count = plot_data.size();
+        auto start_point = plot_data.begin();
+        auto second_point = std::next(start_point, 1);
+
+        ImDrawList* draw_list = ImPlot::GetPlotDrawList();
+
+        auto conv = [](const std::chrono::system_clock::time_point& tp) {
+          return std::chrono::duration_cast<std::chrono::seconds>(
+                     tp.time_since_epoch())
+              .count();
+        };
+
+        double half_width =
+            count > 1 ? (conv(start_point->first) - conv(second_point->first)) *
+                            width_percent
+                      : width_percent;
+
+        if (ImPlot::BeginItem("Stock")) {
+          if (ImPlot::FitThisFrame()) {
+            for (const auto& p : plot_data) {
+              ImPlot::FitPoint(ImPlotPoint(conv(p.first), p.second.low));
+              ImPlot::FitPoint(ImPlotPoint(conv(p.first), p.second.high));
+            }
+          }
+
+          for (const auto& p : plot_data) {
+            // std::cout << "Time: " << date::format("%Y-%m-%d", p.first)
+            //           << " Open: " << p.second.open
+            //           << " High: " << p.second.high << " Low: " <<
+            //           p.second.low
+            //           << " Close: " << p.second.close << std::endl;
+            // std::cout << "x: " << conv(p.first) - half_width << std::endl;
+            // std::cout << "half_width: " << half_width << std::endl;
+            ImVec2 open_pos =
+                ImPlot::PlotToPixels(conv(p.first) - half_width, p.second.open);
+            ImVec2 close_pos = ImPlot::PlotToPixels(
+                conv(p.first) + half_width + 1, p.second.close);
+            ImVec2 low_pos = ImPlot::PlotToPixels(conv(p.first), p.second.low);
+            ImVec2 high_pos =
+                ImPlot::PlotToPixels(conv(p.first), p.second.high);
+            ImU32 color = ImGui::GetColorU32(
+                p.second.open > p.second.close ? bull_col : bear_col);
+            draw_list->AddLine(low_pos, high_pos, color);
+            draw_list->AddRectFilled(open_pos, close_pos, color);
+          }
+
+          ImPlot::EndItem();
+        }
+
+        ImPlot::EndPlot();
+      }
+      ImPlot::DestroyContext();
 
       ImGui::InputText("Starting Data", starting_date, 64);
       ImGui::Separator();
@@ -210,27 +289,23 @@ int main(int, char**) {
       ImGui::Separator();
 
       if (ImGui::Button("Update")) {
-        std::string url =
-            GenerateURL("^GSPC", date::sys_days{date::January / 1 / 2023},
-                        date::sys_days{date::April / 1 / 2023}, "1d");
-        std::cout << "url: " << url << std::endl;
+        std::string symbol_str;
+        std::chrono::system_clock::time_point starting_tp;
+        std::chrono::system_clock::time_point ending_tp;
+
+        symbol_str = std::string(symbol);
+        std::istringstream in_start{starting_date};
+        in_start >> date::parse("%F", starting_tp);
+        std::istringstream in_end{ending_date};
+        in_end >> date::parse("%F", ending_tp);
+
+        std::string url = GenerateURL(symbol_str, starting_tp, ending_tp, "1d");
         CURLcode code = DownloadCSV(curl, url);
         std::cout << "code: " << code << std::endl;
-        std::cout << "csv: " << csv << std::endl;
 
         ParseTradingData(csv, plot_data);
       }
 
-      ImPlot::CreateContext();
-      if (ImPlot::BeginPlot("My Plot")) {
-        ImPlot::PlotBars("My Bar Plot", bar_data, 11);
-        ImPlot::PlotLine("My Line Plot", x_data, y_data, 1000);
-        ImPlot::EndPlot();
-      }
-      ImPlot::DestroyContext();
-
-      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                  1000.0f / io.Framerate, io.Framerate);
       ImGui::End();
     }
 

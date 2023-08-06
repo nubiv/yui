@@ -27,17 +27,17 @@ CURLcode DownloadCSV(CURL *curl, std::string &url) {
   return curl_easy_perform(curl);
 }
 
-std::string GenerateURL(const std::string &symbol,
-                        const system_clock::time_point &date_start,
-                        const system_clock::time_point &date_end,
+std::string GenerateURL(const std::string &symbol_str,
+                        const system_clock::time_point &starting_tp,
+                        const system_clock::time_point &ending_tp,
                         const std::string &interval) {
   auto date_start_str = std::to_string(
-      duration_cast<seconds>(date_start.time_since_epoch()).count());
+      duration_cast<seconds>(starting_tp.time_since_epoch()).count());
   auto date_end_str = std::to_string(
-      duration_cast<seconds>(date_end.time_since_epoch()).count());
+      duration_cast<seconds>(ending_tp.time_since_epoch()).count());
 
   std::string url = "https://query1.finance.yahoo.com/v7/finance/download/" +
-                    symbol + "?period1=" + date_start_str +
+                    symbol_str + "?period1=" + date_start_str +
                     "&period2=" + date_end_str + "&interval=" + interval +
                     "&events=history";
 

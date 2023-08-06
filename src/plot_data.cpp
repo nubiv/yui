@@ -17,6 +17,7 @@ void ParseTradingData(
       std::istringstream in{vector[0]};
       std::chrono::system_clock::time_point time_point;
       in >> date::parse("%F", time_point);
+
       TradingData trading_data;
       trading_data.open = std::stod(vector[1]);
       trading_data.high = std::stod(vector[2]);
