@@ -6,6 +6,8 @@ void ParseTradingData(
   std::istringstream csv_stream(csv);
   std::string line;
 
+  plot_data.clear();
+
   std::getline(csv_stream, line);
   while (std::getline(csv_stream, line)) {
     const std::regex regex{"((?:[^\\\\,]|\\\\.)*?)(?:,|$)"};

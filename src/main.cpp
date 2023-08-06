@@ -163,13 +163,13 @@ int main(int, char**) {
   std::map<std::chrono::system_clock::time_point, TradingData> plot_data;
   CURL* curl = InitCurl(csv);
 
-  char starting_date[64] = "2023-06-20";
-  char ending_date[64] = "2023-07-01";
+  char starting_date[64] = "2023-07-01";
+  char ending_date[64] = "2023-08-01";
   char symbol[64] = "TSLA";
 
   std::string init_url =
-      GenerateURL("^GSPC", date::sys_days{date::January / 1 / 2023},
-                  date::sys_days{date::July / 1 / 2023}, "1d");
+      GenerateURL(symbol, date::sys_days{date::July / 1 / 2023},
+                  date::sys_days{date::August / 1 / 2023}, "1d");
   DownloadCSV(curl, init_url);
   ParseTradingData(csv, plot_data);
 
@@ -199,7 +199,7 @@ int main(int, char**) {
         ImGui::End();
         return 1;
       }
-      ImGui::SetWindowSize(ImVec2(io.DisplaySize));
+      // ImGui::SetWindowSize(ImVec2(io.DisplaySize));
       ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
 
       ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate,
@@ -236,7 +236,7 @@ int main(int, char**) {
                             width_percent
                       : width_percent;
 
-        if (ImPlot::BeginItem("Plot")) {
+        if (ImPlot::BeginItem("##Plot")) {
           if (ImPlot::FitThisFrame()) {
             for (const auto& p : plot_data) {
               ImPlot::FitPoint(ImPlotPoint(conv(p.first), p.second.low));
@@ -252,6 +252,7 @@ int main(int, char**) {
             //           << " Close: " << p.second.close << std::endl;
             // std::cout << "x: " << conv(p.first) - half_width << std::endl;
             // std::cout << "half_width: " << half_width << std::endl;
+            // std::cout << "y: " << p.second.open << std::endl;
             ImVec2 open_pos =
                 ImPlot::PlotToPixels(conv(p.first) - half_width, p.second.open);
             ImVec2 close_pos = ImPlot::PlotToPixels(
@@ -290,6 +291,7 @@ int main(int, char**) {
         in_end >> date::parse("%F", ending_tp);
 
         std::string url = GenerateURL(symbol_str, starting_tp, ending_tp, "1d");
+        csv.clear();
         CURLcode code = DownloadCSV(curl, url);
         std::cout << "code: " << code << std::endl;
 
