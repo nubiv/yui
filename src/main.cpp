@@ -63,16 +63,13 @@ int main(int, char**) {
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+  ImPlot::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
   (void)io;
   io.ConfigFlags |=
       ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
   io.ConfigFlags |=
       ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
-
-  // Setup Dear ImGui style
-  // ImGui::StyleColorsDark();
-  // ImGui::StyleColorsLight();
 
   // Setup Dear ImGui style
   ImVec4* colors = ImGui::GetStyle().Colors;
@@ -166,7 +163,7 @@ int main(int, char**) {
   std::map<std::chrono::system_clock::time_point, TradingData> plot_data;
   CURL* curl = InitCurl(csv);
 
-  char starting_date[64] = "2023-06-01";
+  char starting_date[64] = "2023-06-20";
   char ending_date[64] = "2023-07-01";
   char symbol[64] = "TSLA";
 
@@ -175,11 +172,6 @@ int main(int, char**) {
                   date::sys_days{date::July / 1 / 2023}, "1d");
   DownloadCSV(curl, init_url);
   ParseTradingData(csv, plot_data);
-
-  // for (const auto& p : plot_data) {
-  //   std::cout << "Time: " << date::format("%Y-%m-%d", p.first)
-  //             << " High: " << p.second.high << std::endl;
-  // }
 
   // Main loop
 #ifdef __EMSCRIPTEN__
@@ -199,10 +191,10 @@ int main(int, char**) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // Yui window
+    // YUI window
     {
       if (!ImGui::Begin(
-              "Yui!", nullptr,
+              "YUI!", nullptr,
               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize)) {
         ImGui::End();
         return 1;
@@ -214,14 +206,13 @@ int main(int, char**) {
                   io.Framerate);
 
       // start plotting
-      ImPlot::CreateContext();
       if (ImPlot::BeginPlot("StockPlot", ImVec2(-1, io.DisplaySize.y - 200),
                             ImPlotFlags_NoLegend)) {
         ImVec4 bear_col = ImVec4(0.000f, 1.000f, 0.441f, 1.000f);
         ImVec4 bull_col = ImVec4(0.853f, 0.050f, 0.310f, 1.000f);
         double width_percent = 0.25;
 
-        ImPlot::SetupAxis(ImAxis_X1, "Date",
+        ImPlot::SetupAxis(ImAxis_X1, "Timeline",
                           ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
         ImPlot::SetupAxis(ImAxis_Y1, "Price",
                           ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
@@ -245,7 +236,7 @@ int main(int, char**) {
                             width_percent
                       : width_percent;
 
-        if (ImPlot::BeginItem("Stock")) {
+        if (ImPlot::BeginItem("Plot")) {
           if (ImPlot::FitThisFrame()) {
             for (const auto& p : plot_data) {
               ImPlot::FitPoint(ImPlotPoint(conv(p.first), p.second.low));
@@ -279,7 +270,6 @@ int main(int, char**) {
 
         ImPlot::EndPlot();
       }
-      ImPlot::DestroyContext();
 
       ImGui::InputText("Starting Data", starting_date, 64);
       ImGui::Separator();
@@ -330,6 +320,7 @@ int main(int, char**) {
   // Cleanup
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
+  ImPlot::DestroyContext();
   ImGui::DestroyContext();
 
   glfwDestroyWindow(window);
