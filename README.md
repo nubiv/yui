@@ -9,7 +9,7 @@ A simple Stock Price Visualizer ⚖️. All data is sourced from Yahoo Finance.
 ## Demo
 
 <p align="center">
-  <img width="600" src="public/demo.png">
+  <img width="600" src="public/yui.png">
 </p>
 
 ## Build From Source
