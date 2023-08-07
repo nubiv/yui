@@ -1,4 +1,4 @@
-project('yui', 'cpp', default_options: ['buildtype=release', 'debug=false', 'optimization=3'])
+project('yui', 'cpp', version: '0.0', default_options: ['buildtype=release', 'debug=false', 'optimization=3'])
 
 imgui_dir = join_paths('..', 'imgui')
 
