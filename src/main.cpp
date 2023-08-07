@@ -199,7 +199,7 @@ int main(int, char**) {
         ImGui::End();
         return 1;
       }
-      // ImGui::SetWindowSize(ImVec2(io.DisplaySize));
+      ImGui::SetWindowSize(ImVec2(io.DisplaySize));
       ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
 
       ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate,
@@ -212,11 +212,9 @@ int main(int, char**) {
         ImVec4 bull_col = ImVec4(0.853f, 0.050f, 0.310f, 1.000f);
         double width_percent = 0.25;
 
-        ImPlot::SetupAxis(ImAxis_X1, "Timeline",
-                          ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
-        ImPlot::SetupAxis(ImAxis_Y1, "Price",
-                          ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
+        ImPlot::SetupAxis(ImAxis_X1, "Timeline", ImPlotAxisFlags_AutoFit);
         ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+        ImPlot::SetupAxis(ImAxis_Y1, "Price", ImPlotAxisFlags_AutoFit);
         ImPlot::SetupAxisFormat(ImAxis_Y1, "$%.0f");
 
         int count = plot_data.size();
